@@ -39,6 +39,6 @@ public class UserToken {
     private String scope;
 
     @ManyToOne(cascade = CascadeType.ALL)
-    @JoinColumn(name="USER_TOKEN_ID", nullable=false)
-    private SmsUser smsUser;
+    @JoinColumn(name="USER_PROFILE_TOKEN_ID", nullable=false)
+    private UserProfile userProfile;
 }

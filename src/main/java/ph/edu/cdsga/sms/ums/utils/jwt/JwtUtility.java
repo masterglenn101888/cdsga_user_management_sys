@@ -3,7 +3,7 @@ package ph.edu.cdsga.sms.ums.utils.jwt;
 import io.jsonwebtoken.*;
 import org.json.JSONException;
 import org.json.JSONObject;
-import ph.edu.cdsga.sms.ums.entity.account.SmsUser;
+import ph.edu.cdsga.sms.ums.entity.account.UserProfile;
 import ph.edu.cdsga.sms.ums.entity.account.UserToken;
 import ph.edu.cdsga.sms.ums.exception.JwtTokenMalformedException;
 import ph.edu.cdsga.sms.ums.exception.JwtTokenMissingException;
@@ -14,11 +14,11 @@ import java.util.List;
 
 public final class JwtUtility {
 
-    public static String generateToken(SmsUser dtsUser, List<String> rolesList, String url){
-        return getString(dtsUser, rolesList, url);
+    public static String generateToken(UserProfile userProfile, List<String> rolesList, String url){
+        return getString(userProfile, rolesList, url);
     }
 
-    public static UserToken populateUserToken(SmsUser dtsUser, String accessToken, String scope){
+    public static UserToken populateUserToken(UserProfile userProfile, String accessToken, String scope){
         return UserToken.builder()
                 .accessToken(accessToken)
                 .expiresIn("300")
@@ -26,19 +26,19 @@ public final class JwtUtility {
                 .tokenType(JwtProperties.JWT_BEARER)
                 .notBeforePolicy("0")
                 .scope(scope)
-                .smsUser(dtsUser)
+                .userProfile(userProfile)
                 .build();
     }
 
-    public static String getString(SmsUser dtsUser, List<String> rolesList, String url) {
-        Claims claims = Jwts.claims().setSubject(dtsUser.getEmail());
+    public static String getString(UserProfile userProfile, List<String> rolesList, String url) {
+        Claims claims = Jwts.claims().setSubject(userProfile.getEmail());
         Date exp = new Date(System.currentTimeMillis() + JwtProperties.EXPIRATION_TIME);
         return Jwts.builder()
                 .setHeaderParam("typ", JwtProperties.HEADER_STRING)
                 .setClaims(claims)
-                .claim("userId", dtsUser.getUserId())
-                .claim("firstName", dtsUser.getFirstName())
-                .claim("username", dtsUser.getUsername())
+                .claim("userId", userProfile.getUserId())
+                .claim("firstName", userProfile.getFirstName())
+                .claim("username", userProfile.getUsername())
                 .claim("roles", rolesList)
                 .setIssuer(url)
                 .setIssuedAt(new Date(System.currentTimeMillis()))

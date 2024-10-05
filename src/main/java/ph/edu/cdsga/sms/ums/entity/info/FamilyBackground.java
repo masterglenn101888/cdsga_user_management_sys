@@ -3,6 +3,7 @@ package ph.edu.cdsga.sms.ums.entity.info;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.GenericGenerator;
 import ph.edu.cdsga.sms.ums.utils.object.ObjectUtils;
 
 import javax.persistence.*;
@@ -15,6 +16,8 @@ import javax.persistence.*;
 public class FamilyBackground {
 
     @Id
+    @GeneratedValue(generator = "uuid-hibernate-generator")
+    @GenericGenerator(name = "uuid-hibernate-generator", strategy = "org.hibernate.id.UUIDGenerator")
     @Column(name = "ID")
     private String id;
 
@@ -127,7 +130,7 @@ public class FamilyBackground {
     private String contactPerson;
 
     @Column(name = "CP_ADDRESS")
-    private String cpAaddress;
+    private String cpAddress;
 
     @Column(name = "CP_MOBILE_NO")
     private String cpMobileNo;
@@ -157,12 +160,14 @@ public class FamilyBackground {
     @PrePersist
     public void onPrePersist() {
         String date = ObjectUtils.getCurrentDateAndTime();
+        this.setCreatedBy("System");
         this.setCreationDate(date);
     }
 
     @PreUpdate
     public void onPreUpdate() {
         String date = ObjectUtils.getCurrentDateAndTime();
+        this.setLastModifiedBy("System");
         this.setLastModificationDate(date);
     }
 }

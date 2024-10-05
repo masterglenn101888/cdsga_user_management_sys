@@ -4,15 +4,14 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ph.edu.cdsga.sms.ums.common.prop.ApplicationProperties;
 import ph.edu.cdsga.sms.ums.common.response.SuccessResponse;
-import ph.edu.cdsga.sms.ums.dto.RegistrationDto;
-import ph.edu.cdsga.sms.ums.dto.UserDto;
-import ph.edu.cdsga.sms.ums.entity.account.SmsUser;
+import ph.edu.cdsga.sms.ums.dto.account.UserProfileDto;
+import ph.edu.cdsga.sms.ums.entity.account.UserProfile;
 import ph.edu.cdsga.sms.ums.entity.account.UserRole;
 import ph.edu.cdsga.sms.ums.enums.UserRoles;
 import ph.edu.cdsga.sms.ums.enums.UserStatus;
 import ph.edu.cdsga.sms.ums.exception.ServiceException;
-import ph.edu.cdsga.sms.ums.repository.UserRepository;
-import ph.edu.cdsga.sms.ums.repository.UserRoleRepository;
+import ph.edu.cdsga.sms.ums.repository.account.UserProfileRepository;
+import ph.edu.cdsga.sms.ums.repository.account.UserRoleRepository;
 import ph.edu.cdsga.sms.ums.utils.bcrypt.BCryptPasswordGenerator;
 import ph.edu.cdsga.sms.ums.utils.object.ObjectUtils;
 import ph.edu.cdsga.sms.ums.utils.string.CommonStringUtility;
@@ -27,59 +26,62 @@ public class RegistrationService {
     private final ApplicationProperties applicationProperties;
     private final LoggingService loggingService;
     private final BCryptPasswordGenerator encoder;
-    private final UserRepository userRepository;
+    private final UserProfileRepository userProfileRepository;
     private final UserRoleRepository userRoleRepository;
 
     public RegistrationService(ApplicationProperties applicationProperties,
                                LoggingService loggingService,
                                BCryptPasswordGenerator encoder,
-                               UserRepository userRepository,
+                               UserProfileRepository userProfileRepository,
                                UserRoleRepository userRoleRepository) {
         this.applicationProperties = applicationProperties;
         this.loggingService = loggingService;
         this.encoder = encoder;
-        this.userRepository = userRepository;
+        this.userProfileRepository = userProfileRepository;
         this.userRoleRepository = userRoleRepository;
     }
 
-    public SuccessResponse registerAccount(String uuid, RegistrationDto registrationDto){
+    public SuccessResponse registerAccount(String uuid, UserProfileDto userProfileDto){
         loggingService.log(uuid, this.getClass().toString() +  TraceLog.SMS_AUTHENTICATION_SERVICE_AUTHENTICATE,
-                "", "RegistrationDto : " + registrationDto);
+                "", "UserProfileDto : " + userProfileDto);
 
-        // Check student ID if existing
-        SmsUser smsUser1 = userRepository.findUserByIdNo(registrationDto.getUsername());
-        if(!Objects.isNull(smsUser1)){
-            throw new ServiceException(String.format(CommonStringUtility.ERR_CODE_001_USERNAME_TAKEN, registrationDto.getUsername()), 403);
+        // Check username if existing
+        UserProfile userProfileUsername = userProfileRepository.findByUsername(userProfileDto.getUsername());
+        if(!Objects.isNull(userProfileUsername)){
+            throw new ServiceException(String.format(CommonStringUtility.ERR_CODE_001_USERNAME_TAKEN, userProfileDto.getUsername()), 403);
         }
 
         // Check email if existing
-        SmsUser smsUser2 = userRepository.findUserByEmail(registrationDto.getEmail());
-        if(!Objects.isNull(smsUser2)){
-            throw new ServiceException(String.format(CommonStringUtility.ERR_CODE_001_EMAIL_TAKEN, registrationDto.getEmail()), 403);
+        UserProfile userProfileEmail = userProfileRepository.findByEmail(userProfileDto.getEmail());
+        if(!Objects.isNull(userProfileEmail)){
+            throw new ServiceException(String.format(CommonStringUtility.ERR_CODE_001_EMAIL_TAKEN, userProfileDto.getEmail()), 403);
         }
 
-        SmsUser user = new SmsUser();
-        user.setStudentIdNo(registrationDto.getUsername());
-        user.setStatus(UserStatus.INACTIVE.toString());
-        user.setActive(false);
-        user.setLoginAttempts(0);
-        ObjectUtils.copyProperties(registrationDto, user);
-        user.setPassword(encoder.passwordEncoder(registrationDto.getPassword()));
+        UserProfile userProfile = this.populateUserProfile();
+        ObjectUtils.copyProperties(userProfileDto, userProfile);
+        userProfile.setPassword(encoder.passwordEncoder(userProfileDto.getPassword()));
 
-        UserRole role = new UserRole();
-        role.setUserRole(UserRoles.getRole(registrationDto.getUserRole()));
-        role.setUserRoleId(UserRoles.getRoleId(registrationDto.getUserRole()));
-        role.setSmsUser(user);
+        UserRole role = this.populateUserRole(userProfile, userProfileDto.getGroup());
         userRoleRepository.save(role);
 
-        return new SuccessResponse(user, CommonStringUtility.SUCCESS_MSG_REGISTRATION,
+        return new SuccessResponse(userProfile, CommonStringUtility.SUCCESS_MSG_REGISTRATION,
                 applicationProperties.getAppName(), applicationProperties.getAppVersion());
     }
 
-    public SuccessResponse activateAccount(String uuid, UserDto userDto){
+    private UserProfile populateUserProfile(){
+        return UserProfile.builder()
+                .status(UserStatus.INACTIVE.toString())
+                .isActive(false)
+                .loginAttempts(0)
+                .build();
+    }
 
-        return new SuccessResponse("", CommonStringUtility.SUCCESS_MSG_REGISTRATION,
-                applicationProperties.getAppName(), applicationProperties.getAppVersion());
+    private UserRole populateUserRole(UserProfile userProfile, String group){
+        return UserRole.builder()
+                .userRole(UserRoles.getRole(group))
+                .userRoleId(UserRoles.getRoleId(group))
+                .userProfile(userProfile)
+                .build();
     }
 
 }

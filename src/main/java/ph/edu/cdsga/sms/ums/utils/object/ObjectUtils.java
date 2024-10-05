@@ -7,6 +7,8 @@ import org.springframework.beans.BeanUtils;
 import java.text.DateFormat;
 import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
@@ -26,6 +28,12 @@ public final class ObjectUtils {
         Date date = Calendar.getInstance().getTime();
         DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
         return dateFormat.format(date);
+    }
+
+    public static Date getLocalDateTime() {
+        Date in = new Date();
+        LocalDateTime ldt = LocalDateTime.ofInstant(in.toInstant(), ZoneId.systemDefault());
+        return Date.from(ldt.atZone(ZoneId.systemDefault()).toInstant());
     }
 
     public static Boolean isValidCsv(String path) {

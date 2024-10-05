@@ -4,6 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
+import org.hibernate.annotations.GenericGenerator;
 import ph.edu.cdsga.sms.ums.utils.object.ObjectUtils;
 
 import javax.persistence.*;
@@ -14,9 +15,12 @@ import java.util.List;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
+@ToString
 public class PersonalInfo {
 
     @Id
+    @GeneratedValue(generator = "uuid-hibernate-generator")
+    @GenericGenerator(name = "uuid-hibernate-generator", strategy = "org.hibernate.id.UUIDGenerator")
     @Column(name = "ID")
     private String id;
 
@@ -74,14 +78,20 @@ public class PersonalInfo {
     @Column(name = "VACCINATION_STATUS")
     private String vaccinationStatus;
 
-    @Column(name = "IS_PWD")
-    private String isPwd;
-
     @Column(name = "STUDENT_ID_PATH")
     private String studentIdPath;
 
     @Column(name = "SIGNATURE_PATH")
     private String signaturePath;
+
+    @Column(name = "LRN")
+    private String lrl;
+
+    @Column(name = "IS_SPED")
+    private String isSped;
+
+    @Column(name = "IS_PWD")
+    private String isPwd;
 
     @Column(name = "CREATION_DATE", nullable = false)
     private String creationDate;
@@ -122,12 +132,14 @@ public class PersonalInfo {
     @PrePersist
     public void onPrePersist() {
         String date = ObjectUtils.getCurrentDateAndTime();
+        this.setCreatedBy("System");
         this.setCreationDate(date);
     }
 
     @PreUpdate
     public void onPreUpdate() {
         String date = ObjectUtils.getCurrentDateAndTime();
+        this.setLastModifiedBy("System");
         this.setLastModificationDate(date);
     }
 }
